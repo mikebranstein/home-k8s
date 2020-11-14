@@ -1,0 +1,75 @@
+---
+- name: Install requirements on local machine
+  hosts: localhost
+  gather_facts: no
+  become: true
+
+  tasks:
+  - name: Install pip
+    apt:
+      name:
+        - python3-pip
+
+  - name: Install pexpect
+    pip:
+      name: pexpect
+
+- name: Install requirements on local machine
+  hosts: all
+  gather_facts: no
+  become: true
+  vars:
+    ansible_user: ubuntu
+    default_password: ubuntu
+    temp_password: MyTempPass123!!
+
+  tasks:
+  - name: Set password if expired
+    delegate_to: localhost
+    expect:
+      command: ssh {{ ansible_user }}@{{ inventory_hostname }} -o StrictHostKeyChecking=no -o userknownhostsfile=/dev/null
+      timeout: 10
+      responses:
+        "password:":
+          # we couldn't keep the same old password
+          - "{{ default_password }}"
+          - "{{ default_password }}"
+          - "{{ temp_password }}"
+          - "{{ temp_password }}"
+    register: status
+    ignore_errors: true
+    changed_when: "'authentication tokens updated successfully' in status.stdout"
+
+- name: Bootstrap SSH
+  hosts: all
+  gather_facts: no
+  remote_user: ubuntu
+  become: true
+  vars:
+    ansible_ssh_pass: MyTempPass123!!
+
+  tasks:
+  - name: Deploy SSH key
+    authorized_key: 
+      user: ubuntu
+      state: present
+      key: "{{ lookup('file', 'id_rsa.pub') }}"
+
+  - name: Allow 'sudo' group to have passwordless sudo
+    lineinfile:
+      dest: /etc/sudoers
+      state: present
+      regexp: '^%sudo'
+      line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+      validate: 'visudo -cf %s'
+
+  - name: Disable password login
+    lineinfile: dest=/etc/ssh/sshd_config regexp="^PasswordAuthentication" line="PasswordAuthentication no" state=present
+    notify:
+      - restart sshd
+
+  handlers:
+  - name: restart sshd
+    service:
+      name: sshd
+      state: restarted

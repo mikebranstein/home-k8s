@@ -1,38 +1,4 @@
 ---
-- name: Bootstrap SSH
-  hosts: all
-  gather_facts: no
-  remote_user: ubuntu
-  become: true
-  vars:
-    ansible_ssh_pass: ubuntu
-
-  tasks:
-  - name: Deploy SSH key
-    authorized_key: 
-      user: ubuntu
-      state: present
-      key: "{{ lookup('file', 'id_rsa.pub') }}"
-
-  - name: Allow 'sudo' group to have passwordless sudo
-    lineinfile:
-      dest: /etc/sudoers
-      state: present
-      regexp: '^%sudo'
-      line: '%sudo ALL=(ALL) NOPASSWD: ALL'
-      validate: 'visudo -cf %s'
-
-  - name: Disable password login
-    lineinfile: dest=/etc/ssh/sshd_config regexp="^PasswordAuthentication" line="PasswordAuthentication no" state=present
-    notify:
-      - restart sshd
-
-  handlers:
-  - name: restart sshd
-    service:
-      name: sshd
-      state: restarted
-
 - name: Configure Ubuntu for K8s
   hosts: all
   gather_facts: no
@@ -52,6 +18,7 @@
   - name: Display Raspberry Pi EEPROM status
     command: rpi-eeprom-update
     register: eeprom
+    ignore_errors: true
   - debug: var=eeprom.stdout_lines
 
   - name: Upgrade all packages, full-upgrade
@@ -60,7 +27,7 @@
 
   - name: Reboot and wait
     reboot:
-      reboot_timeout: 3600
+      reboot_timeout: 300
 
   - name: Display Raspberry Pi EEPROM status
     command: rpi-eeprom-update

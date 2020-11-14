@@ -11,6 +11,8 @@ Automation scripts for the home Rapberry Pi K8s cluster
 ## Process
 1. Flash SD card with latest Ubuntu Server image for Raspberry Pi
 2. Boot Raspberry Pi
-3. Run the configuration script via Ansible. This adds an SSH key to the Raspberry Pi and disabled password logins, then configures updates
+3. Run the SSH configuration playbook via Ansible. This adds an SSH key to the Raspberry Pi and disabled password logins. This playbook is a one-time only run for the very first boot.
+    - `> sudo ansible-playbook ssh.yml -i hosts.yml`
+    - NOTE: this must be run with sudo
+4. Run the K8s configuration playbook
     - `> ansible-playbook configure.yml -i hosts.yml`
-4. 
