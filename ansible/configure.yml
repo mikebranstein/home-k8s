@@ -1,5 +1,5 @@
 ---
-- name: Configure Ubuntu for K8s
+- name: Pre-configuration and package update
   hosts: all
   gather_facts: no
   remote_user: ubuntu
@@ -25,11 +25,32 @@
     apt:
       upgrade: full
 
-  - name: Reboot and wait
-    reboot:
-      reboot_timeout: 300
+  - name: Set hostname
+    hostname:
+      name: "{{ hostname }}"
 
-  - name: Display Raspberry Pi EEPROM status
-    command: rpi-eeprom-update
-    register: eeprom
-  - debug: var=eeprom.stdout_lines
+  # - name: Reboot and wait
+  #   reboot:
+  #     reboot_timeout: 300
+
+  # - name: Display Raspberry Pi EEPROM status
+  #   command: rpi-eeprom-update
+  #   register: eeprom
+  # - debug: var=eeprom.stdout_lines
+
+- name: Configure K8s
+  hosts: all
+  gather_facts: no
+  remote_user: ubuntu
+  become: true
+
+  tasks:
+  - name: Install docker.io
+    apt: 
+      name: docker.io
+
+  - name: Replace /etc/docker/daemon.json
+    copy:
+      src: ./files/etc/docker/daemon.json
+      dest: /etc/docker/daemon.json
+
