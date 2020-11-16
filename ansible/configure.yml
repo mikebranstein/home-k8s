@@ -29,15 +29,17 @@
     hostname:
       name: "{{ hostname }}"
 
-  # - name: Reboot and wait
-  #   reboot:
-  #     reboot_timeout: 300
+  - name: Reboot and wait
+    reboot:
+      reboot_timeout: 300
 
-  # - name: Display Raspberry Pi EEPROM status
-  #   command: rpi-eeprom-update
-  #   register: eeprom
-  # - debug: var=eeprom.stdout_lines
+  - name: Display Raspberry Pi EEPROM status
+    command: rpi-eeprom-update
+    register: eeprom
+  - debug: var=eeprom.stdout_lines
 
+
+# Instructions derived from https://opensource.com/article/20/6/kubernetes-raspberry-pi 
 - name: Configure K8s
   hosts: all
   gather_facts: no
@@ -53,4 +55,53 @@
     copy:
       src: ./files/etc/docker/daemon.json
       dest: /etc/docker/daemon.json
+
+  - name: Read the boot firmware command line file
+    shell: cat /boot/firmware/cmdline.txt
+    register: boot_command_line
+
+  - name: Enable cgroups cpuset, if disabled
+    replace:
+      path: /boot/firmware/cmdline.txt
+      regexp: '^(.+)$'
+      replace: '\1 cgroup_enable=cpuset'
+    when: boot_command_line.stdout.find('cgroup_enable=cpuset') == -1
+
+  - name: Enable cgroups memory, if disabled
+    replace:
+      path: /boot/firmware/cmdline.txt
+      regexp: '^(.+)$'
+      replace: '\1 cgroup_enable=memory'
+    when: boot_command_line.stdout.find('cgroup_enable=memory') == -1
+
+  - name: Replace existing cgroups memory value with 1
+    replace:
+      path: /boot/firmware/cmdline.txt
+      regexp: '\scgroup_memory=(\d+)\s'
+      replace: ' cgroup_memory=1 '
+
+  - name: Replace existing swapaccount value with 1
+    replace:
+      path: /boot/firmware/cmdline.txt
+      regexp: '\sswapaccount=(\d+)\s'
+      replace: ' swapaccount=1 '
+    when: boot_command_line.stdout.find('swapaccount=1') == -1
+
+  - name: Read the boot firmware command line file
+    shell: cat /boot/firmware/cmdline.txt
+    register: boot_command_line
+
+  - name: Set cgroups memory to 1, if not present
+    replace:
+      path: /boot/firmware/cmdline.txt
+      regexp: '^(.+)$'
+      replace: '\1 cgroup_memory=1'
+    when: boot_command_line.stdout.find('cgroup_memory=1') == -1
+
+  - name: Set swapaccount to 1, if not present
+    replace:
+      path: /boot/firmware/cmdline.txt
+      regexp: '^(.+)$'
+      replace: '\1 swapaccount=1'
+    when: boot_command_line.stdout.find('swapaccount=1') == -1
 
