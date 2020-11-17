@@ -140,3 +140,18 @@
       - kubectl
       state: latest
       update_cache: yes
+
+  - name: Mark as hold kubelet package
+    dpkg_selections:
+      name: kubelet
+      selection: hold
+
+  - name: Mark as hold kubeadm package
+    dpkg_selections:
+      name: kubeadm
+      selection: hold
+
+  - name: Mark as hold kubectl package
+    dpkg_selections:
+      name: kubectl
+      selection: hold
