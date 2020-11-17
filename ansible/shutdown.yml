@@ -1,0 +1,10 @@
+---
+- name: Shutdown hosts
+  hosts: all
+  gather_facts: no
+  remote_user: ubuntu
+  become: true
+
+  tasks:
+  - name: Shutdown
+    community.general.shutdown:
