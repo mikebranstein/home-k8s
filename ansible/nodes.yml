@@ -1,0 +1,30 @@
+---
+- name: Initialize the control plane
+  hosts: master
+  gather_facts: no
+  remote_user: ubuntu
+  become: true
+
+  tasks: 
+  - name: Generate cluster join token
+    shell: kubeadm token create --print-join-command
+    register: k8s_join
+
+  - debug:
+      msg: "{{ k8s_join.stdout }}"
+
+  - set_fact:
+      token: "{{ k8s_join.stdout | regex_search(regexp, '\\2') | first }}"
+    vars:
+      regexp: '([^\s]+\s+){4}([^\s]+)'
+
+  - debug:
+      msg: "Join token is: {{ token }}"
+
+  - set_fact:
+      hash: "{{ k8s_join.stdout | regex_search(regexp, '\\2') | first }}"
+    vars:
+      regexp: '([^\s]+\s+){6}([^\s]+)'
+
+  - debug:
+      msg: "Join CA hash is: {{ hash }}"
