@@ -4,6 +4,8 @@
   gather_facts: no
   remote_user: ubuntu
   become: true
+  vars:
+    reboot: true
 
   tasks:
   - name: Update package cache
@@ -32,6 +34,7 @@
   - name: Reboot and wait
     reboot:
       reboot_timeout: 300
+    when: reboot == true
 
   - name: Display Raspberry Pi EEPROM status
     command: rpi-eeprom-update
@@ -105,3 +108,8 @@
       replace: '\1 swapaccount=1'
     when: boot_command_line.stdout.find('swapaccount=1') == -1
 
+  - name: Show docker info
+    command: docker info
+    register: docker_info
+    ignore_errors: yes
+  - debug: var=docker_info.stdout_lines
