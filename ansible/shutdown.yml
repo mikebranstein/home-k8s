@@ -7,4 +7,4 @@
 
   tasks:
   - name: Shutdown
-    community.general.shutdown:
+    command: shutdown -h
