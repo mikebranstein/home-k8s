@@ -1,0 +1,39 @@
+---
+- name: Initialize the control plane
+  hosts: master
+  gather_facts: no
+  remote_user: ubuntu
+  become: true
+
+  tasks:
+  - name: Detect if control plane has been initialized
+    stat:
+      path: /etc/kubernetes/admin.conf
+    register: stat_result
+
+  - name: Generate a bootstrap token to authenticate nodes joining the cluster
+    command: kubeadm token generate
+    register: token
+    when: not stat_result.stat.exists
+
+  - name: Add K8S Token to dummy host
+    add_host: 
+      name: K8S_TOKEN_HOLDER
+      token: "{{ token.stdout }}"
+    when: not stat_result.stat.exists
+
+  - name: Display bootstrap token
+    debug: 
+      msg: "Bootstrap token is {{ hostvars['K8S_TOKEN_HOLDER']['token'] }}"
+    when: not stat_result.stat.exists
+
+  - name: Initialize the control plane
+    command: "kubeadm init --token={{ hostvars['K8S_TOKEN_HOLDER']['token'] }} --kubernetes-version=v1.19.4 --pod-network-cidr=10.250.0.0/16"
+    register: result
+    when: not stat_result.stat.exists
+
+  - name: Show kubeadm init result
+    debug: 
+      msg: "{{ result.stdout_lines }}"
+    when: not stat_result.stat.exists
+
