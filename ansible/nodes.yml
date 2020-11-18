@@ -54,6 +54,14 @@
   become: true
 
   tasks:
+  - name: Wait for all nodes to join cluster
+    command: "kubectl get node {{ hostvars[item]['hostname'] }}"
+    register: get_nodes
+    until: get_nodes.stdout.find("Not Ready") == -1
+    retries: 5
+    delay: 10
+    with_items: "{{ groups['nodes'] }}"
+
   - name: Verify all nodes joined
     command: kubectl get nodes
     register: get_nodes
