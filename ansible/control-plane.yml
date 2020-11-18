@@ -37,3 +37,30 @@
       msg: "{{ result.stdout_lines }}"
     when: not stat_result.stat.exists
 
+  - name: Create .kube directory
+    file:
+      path: ~/.kube
+      state: directory
+
+  - name: Copy kube admin 
+    copy: 
+      src: /etc/kubernetes/admin.conf 
+      dest: ~/.kube/config
+      remote_src: yes
+
+  - name: Install flanel CNI 
+    command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+    register: flanel
+
+  - debug:
+      msg: "{{ flanel.stdout_lines }}"
+
+  - name: Wait for control plane to be ready
+    command: kubectl get nodes
+    register: get_nodes
+    until: get_nodes.stdout.find("Not Ready") == -1
+    retries: 5
+    delay: 10
+
+  - debug:
+      msg: "{{ get_nodes.stdout_lines }}"
