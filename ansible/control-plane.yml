@@ -4,6 +4,9 @@
   gather_facts: no
   remote_user: ubuntu
   become: true
+  vars:
+    kubernetes-version: v1.19.4
+    pod-network-cidr: 192.168.21.0/24
 
   tasks:
   - name: Detect if control plane has been initialized
@@ -28,7 +31,7 @@
     when: not stat_result.stat.exists
 
   - name: Initialize the control plane
-    command: "kubeadm init --token={{ hostvars['K8S_TOKEN_HOLDER']['token'] }} --kubernetes-version=v1.19.4 --pod-network-cidr=10.250.0.0/16"
+    command: "kubeadm init --token={{ hostvars['K8S_TOKEN_HOLDER']['token'] }} --kubernetes-version={{ kubernetes-version }} --pod-network-cidr={{ pod-network-cidr }}"
     register: result
     when: not stat_result.stat.exists
 
