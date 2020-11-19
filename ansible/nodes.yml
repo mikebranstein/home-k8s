@@ -58,8 +58,8 @@
     command: "kubectl get node {{ hostvars[item]['hostname'] }}"
     register: get_nodes
     until: get_nodes.stdout.find("NotReady") == -1
-    retries: 5
-    delay: 10
+    retries: 30 # can take up to 5 minutes to startup
+    delay: 10 
     with_items: "{{ groups['nodes'] }}"
 
   - name: Verify all nodes joined
