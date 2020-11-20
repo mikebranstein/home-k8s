@@ -1,0 +1,41 @@
+---
+- name: Install requirements on local machine
+  hosts: localhost
+  gather_facts: no
+  become: true
+
+  tasks:
+  # Kubernetes repo setup
+  - name: Add the packages.cloud.google.com apt key
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+  - name: Add the Kubernetes repo
+    copy: 
+      src: ./files/etc/apt/sources.list.d/kubernetes.list
+      dest: /etc/apt/sources.list.d/kubernetes.list
+
+  # Helm repo setup
+  - name: Add the Helm apt key
+    apt_key:
+      url: https://baltocdn.com/helm/signing.asc
+      state: present
+  - name: Add the Helm repo
+    copy: 
+      src: ./files/etc/apt/sources.list.d/helm-stable-debian.list
+      dest: /etc/apt/sources.list.d/helm-stable-debian.list
+
+  - name: Install packages
+    apt:
+      pkg:
+      - sshpass
+      - kubeadm
+      - kubectl
+      - python3-pip
+      - apt-transport-https
+      - helm
+
+  - name: Install pexpect
+    pip:
+      name: pexpect
+

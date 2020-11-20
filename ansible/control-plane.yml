@@ -78,3 +78,53 @@
 
   - debug:
       msg: "{{ get_nodes.stdout_lines }}"
+
+  # enable strict ARP for MetalLB
+  - name: export kube-proxy config
+    shell: kubectl get configmap kube-proxy --namespace kube-system -o yaml > /tmp/kube-proxy.yml
+
+  - name: Update config file for strictARP = true
+    replace:
+      path: /tmp/kube-proxy.yml
+      regexp: '(^\s*)strictARP: false$' # strictARP: false
+      replace: '\1strictARP: true'
+
+  - name: enable strictARP = true
+    command: kubectl apply -f /tmp/kube-proxy.yml --namespace kube-system
+    register: result
+  - debug:
+      msg: "{{ result.stdout_lines }}"
+
+  # install MetalLB
+  - name: install MetalLB namespace
+    command: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
+
+  - name: install MetalLB
+    command: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/metallb.yaml
+    register: result
+  - debug:
+      msg: "{{ result.stdout_lines }}"
+
+  - name: query for metallb secret
+    command: kubectl get secret memberlist --namespace metallb-system
+    register: secret
+    ignore_errors: true
+
+  - name: create secret - one-time-only
+    shell: kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+    register: result
+    when: secret.stderr.find("NotFound") != -1
+  - debug:
+      msg: "{{ result.stdout_lines }}"
+    when: secret.stderr.find("NotFound") != -1
+
+  - name: Copy MetalLB config manifest
+    copy: 
+      src: ./files/tmp/metallb-config.yml
+      dest: /tmp/metallb-config.yml
+
+  - name: Apply MetalLB config manifest
+    command: kubectl apply -f /tmp/metallb-config.yml
+    register: result
+  - debug:
+      msg: "{{ result.stdout_lines }}"

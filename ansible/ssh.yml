@@ -1,25 +1,5 @@
 ---
-- name: Install requirements on local machine
-  hosts: localhost
-  gather_facts: no
-  become: true
-
-  tasks:
-  - name: Install sshpass
-    apt:
-      name:
-        - sshpass
-
-  - name: Install pip
-    apt:
-      name:
-        - python3-pip
-
-  - name: Install pexpect
-    pip:
-      name: pexpect
-
-- name: Install requirements on local machine
+- name: Login to Raspbeery Pi for first time, reset pws, enable SSH with key
   hosts: all
   gather_facts: no
   become: true
