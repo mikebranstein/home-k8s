@@ -34,7 +34,6 @@
       - python3-pip
       - apt-transport-https
       - helm
-      - jq
 
   - name: Install pexpect
     pip:

@@ -12,6 +12,10 @@
     apt: 
       update_cache: yes
 
+  - name: Install various packages
+    apt:
+      name: jq
+
   - name: Install Raspberry Pi EEPROM update package
     apt:
       name: rpi-eeprom
@@ -132,7 +136,7 @@
       src: ./files/etc/apt/sources.list.d/kubernetes.list
       dest: /etc/apt/sources.list.d/kubernetes.list
 
-  - name: Udate cache, install kubelet, kubeadm, and kubectl
+  - name: Update cache, install kubelet, kubeadm, and kubectl
     apt:
       pkg:
       - kubelet

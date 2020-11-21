@@ -1,0 +1,46 @@
+---
+- name: Deploy kube-verify app (multi-replica app with load balancer)
+  hosts: master
+  remote_user: ubuntu
+  become: true
+
+  tasks:
+  # perform sample deployment to cluster and test
+  - name: Copy kube-verify manifest
+    copy: 
+      src: ./files/tmp/kube-verify.yml
+      dest: /tmp/kube-verify.yml
+
+  - name: Deploy kube-verify app
+    command: kubectl apply -f /tmp/kube-verify.yml
+
+  - name: Wait for service to be ready
+    shell: kubectl get service kube-verify --namespace kube-verify -o json | jq .status.loadBalancer.ingress[0].ip -r
+    register: result
+    until: result.stdout | regex_search('\\d+.\\d+.\\d+.\\d+') != ""
+
+  - set_fact:
+      app_ip: "{{ result.stdout }}"
+
+- name: Validate cluster functionality by querying deployed app
+  hosts: localhost
+  become: false
+
+  tasks:
+  - name: Check app is deployed to load balanced IP and responding
+    uri:
+      url: "http://{{ hostvars[groups['master'][0]]['app_ip'] }}"
+    register: result
+    until: result.status == 200
+    retries: 12 # 2 minutes wait
+    delay: 10
+    
+- name: Remove kube-verify app
+  hosts: master
+  remote_user: ubuntu
+  become: true
+
+  tasks:
+  # perform sample deployment to cluster and test
+  - name: Delete app namespace
+    command: kubectl delete namespace kube-verify

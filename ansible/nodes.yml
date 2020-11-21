@@ -68,3 +68,5 @@
 
   - debug: 
       msg: "{{ get_nodes.stdout_lines }}"
+
+ 
